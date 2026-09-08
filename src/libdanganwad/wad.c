@@ -76,7 +76,7 @@ bool read_wad_sub(wad_data *wad_dta, wad_sub *sub)
 	if (fread(&sub->isDir, 1, 1, wad_dta->wad_fptr) != 1)
 		return false;
 
-	return true; // TODO: error checking
+	return true;
 }
 
 bool read_wad_dir(wad_data *wad_dta, wad_dir *dir)
