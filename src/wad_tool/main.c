@@ -263,14 +263,26 @@ int wad_info(char* fName, char* tName, char op)
 
 		dir = wad_get_dir(dta, tName);
 
-		printf("\t |%s\n", wad_dta->dirs[i].obj.name);
-		if (wad_dta->dirs[i].fileCount != 0)
+		if (!dir)
 		{
-			for (uint32_t s = 0; s < wad_dta->dirs[i].fileCount; s++)
-				if (wad_dta->dirs[i].subs[s].isDir)
-					printf("\t | - %s/\n", wad_dta->dirs[i].subs[s].obj.name);
-			else
-				printf("\t | - %s\n", wad_dta->dirs[i].subs[s].obj.name);
+			printf("Directory %s is missing from wad archive.\n", tName);
+
+			wad_close(dta);
+			fclose(wad_ptr);
+			return -3;
+		}
+
+		printf("\tName\n");
+		printf("------------------------------------------------------------------\n");
+		printf("\t |%s\n", dir->obj.name);
+
+		if (dir->fileCount != 0)
+		{
+			for (uint32_t s = 0; s < dir->fileCount; s++)
+				if (dir->subs[s].isDir)
+					printf("\t | - %s/\n", dir->subs[s].obj.name);
+				else
+					printf("\t | - %s\n", dir->subs[s].obj.name);
 		}
 	}
 	else
