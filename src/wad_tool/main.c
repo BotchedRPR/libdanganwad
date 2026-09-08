@@ -10,13 +10,21 @@
 // DEBUG
 #define debug(...) printf(__VA_ARGS__)
 
-int print_help()
+int print_help(void)
 {
 	printf("libdanganwad wad_tool\n");
 	printf("\n\twad_tool <operation> <inputs> <output name>\n");
 	printf("\nOperations:\n");
-	printf("\n\te - Extract all files and directories from a wad file [in: wadfile]\n");
-	printf("\n\tf - Extract a single file from a wad file [in: wadfile filename]\n");
+	printf("\n\t --- File/Directory extraction\n\n");
+	printf("\te - Extract all files and directories from a wad file [in: wadfile]\n");
+	printf("\tf - Extract a single file from a wad file [in: wadfile filename]\n");
+	printf("\n\t --- File/Directory listing\n\n");
+	printf("\tla - Lists all files and directories in a wad file [in: wadfile]\n");
+	printf("\tld - Lists all directories in a wad file [in: wadfile]\n");
+	printf("\tlf - Lists all files in a wad file [in: wadfile]\n");
+	printf("\n\t --- File/Directory info\n\n");
+	printf("\tif - Lists info about a file in a wad file [in: wadfile]\n");
+	printf("\tid - Lists info about a directory in a wad file [in: wadfile]\n");
 	return -1;
 }
 
@@ -100,7 +108,7 @@ int extract_wad(char* fName, char* outName)
 	wad_close(dta);
 	fclose(wad_ptr);
 
-	return 0;
+	return ret;
 }
 
 int extract_wad_file(char* fName, char* tName, char* outName)
@@ -174,16 +182,125 @@ file_exit:
 	return ret;
 }
 
+int wad_list(char* fName, char op)
+{
+	FILE *wad_ptr;
+	wad_data *dta;
+
+	wad_ptr = fopen(fName, "rb");
+
+	if (!wad_ptr)
+	{
+		printf("Invalid wadfile\n");
+		return -1;
+	}
+
+	dta = wad_load(wad_ptr);
+	if (!dta)
+	{
+		printf("Invalid wadfile\n");
+
+		fclose(wad_ptr);
+		return -2;
+	}
+
+	if (op == 'a')
+		wad_list_all(dta);
+	else if (op == 'd')
+		wad_list_dirs(dta);
+	else if (op == 'f')
+		wad_list_files(dta);
+	else
+		return -1;
+
+	return 0;
+}
+
+int wad_info(char* fName, char* tName, char op)
+{
+	FILE *wad_ptr;
+	wad_data *dta;
+
+	wad_ptr = fopen(fName, "rb");
+
+	if (!wad_ptr)
+	{
+		printf("Invalid wadfile\n");
+		return -1;
+	}
+
+	dta = wad_load(wad_ptr);
+	if (!dta)
+	{
+		printf("Invalid wadfile\n");
+
+		fclose(wad_ptr);
+		return -2;
+	}
+
+	if (op == 'f')
+	{
+		wad_file* fle;
+
+		fle = wad_get_file(dta, tName);
+
+		if (!fle)
+		{
+			printf("File %s is missing from wad archive.\n", tName);
+
+			wad_close(dta);
+			fclose(wad_ptr);
+			return -3;
+		}
+
+		printf("\tName\tSize (bytes)\tOffset (bytes, relative to wad_data_sec_off)\n");
+		printf("------------------------------------------------------------------\n");
+		printf("\t%s\t%lu\t0x%lx\n", fle->obj.name, fle->fileOffset, fle->fileSize);
+	}
+	else if (op == 'd')
+	{
+		wad_dir* dir;
+
+		dir = wad_get_dir(dta, tName);
+
+		printf("\t |%s\n", wad_dta->dirs[i].obj.name);
+		if (wad_dta->dirs[i].fileCount != 0)
+		{
+			for (uint32_t s = 0; s < wad_dta->dirs[i].fileCount; s++)
+				if (wad_dta->dirs[i].subs[s].isDir)
+					printf("\t | - %s/\n", wad_dta->dirs[i].subs[s].obj.name);
+			else
+				printf("\t | - %s\n", wad_dta->dirs[i].subs[s].obj.name);
+		}
+	}
+	else
+	{
+		wad_close(dta);
+		fclose(wad_ptr);
+		return -1;
+	}
+
+	wad_close(dta);
+	fclose(wad_ptr);
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
-	if (argc < 3)
+	if (argc < 2)
 		return print_help();
 
-	if (argv[1][0] == 'e')
+	if (argv[1][0] == 'e' && argc == 4)
 		return extract_wad(argv[2], argv[3]);
 
-	if (argv[1][0] == 'f')
+	if (argv[1][0] == 'f' && argc == 4)
 		return extract_wad_file(argv[2], argv[3], argv[4]);
+
+	if (argv[1][0] == 'l' && argc == 3)
+		return wad_list(argv[2], argv[1][1]);
+
+	if (argv[1][0] == 'i' && argc == 4)
+		return wad_info(argv[2], argv[3], argv[1][1]);
 
 	return print_help();
 }

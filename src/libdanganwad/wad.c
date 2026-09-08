@@ -259,7 +259,15 @@ long wad_get_file_offset(wad_data* wad_dta, wad_file* wad_fle)
 	return wad_dta->wad_data_sec_off + wad_fle->fileOffset;
 }
 
+wad_dir* wad_get_dir(wad_data* wad_dta, const char* name)
+{
+	for (uint32_t i = 0; i < wad_dta->dirCount; i++)
+		if (wad_dta->dirs[i].obj.name) // name may be null for the root object
+			if (strcmp(wad_dta->dirs[i].obj.name, name) == 0)
+				return &wad_dta->dirs[i];
 
+	return NULL;
+}
 
 void wad_close(wad_data* wad_dta)
 {

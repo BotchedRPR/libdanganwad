@@ -84,7 +84,7 @@ void wad_list_dirs(wad_data* wad_dta);
 void wad_list_all(wad_data* wad_dta);
 
 /**
- * long wad_get_file_offset(wad_data*, wad_file*) - get a file by name.
+ * wad_file* wad_get_file(wad_data*, const char*) - get a file by name.
  *
  * @param wad_data - the wad data structure
  * @param name - the filename
@@ -101,6 +101,15 @@ wad_file* wad_get_file(wad_data* wad_dta, const char* name);
  * @return the offset on success or -1 on failure.
  */
 long wad_get_file_offset(wad_data* wad_dta, wad_file* wad_fle);
+
+/**
+ * wad_dir* wad_get_dir(wad_data*, const char*) - get a directory by name.
+ *
+ * @param wad_data - the wad data structure
+ * @param name - the dirname
+ * @return the wad_dir structure on success or null on failure
+ */
+wad_dir* wad_get_dir(wad_data* wad_dta, const char* name);
 
 /**
  * void wad_close(wad_data*) - closes a wad file.
