@@ -1,0 +1,31 @@
+# set minimum cmake version
+cmake_minimum_required(VERSION 3.14)
+
+# project name and language
+project(wadproject LANGUAGES C)
+
+# compiler flags
+add_compile_options(-Wall -Wextra -Wpedantic -Werror -g)
+
+# danganwad library
+add_library(danganwad src/libdanganwad/wad.c)
+
+# include dir
+target_include_directories(danganwad PUBLIC include)
+
+# main code
+add_executable(wad_tool src/wad_tool/main.c)
+target_link_libraries(wad_tool PRIVATE danganwad)
+
+# testing binaries
+add_executable(wad_test_extract tests/test_extract.c)
+target_link_libraries(wad_test_extract PRIVATE danganwad)
+
+# enable testing functionality
+enable_testing()
+
+# define tests
+add_test(
+  NAME wad_test_extract
+  COMMAND $<TARGET_FILE:wad_test_extract>
+  )
