@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,9 +8,6 @@
 
 #include <libdanganwad/wad.h>
 
-// DEBUG
-#define debug(...) printf(__VA_ARGS__)
-
 int print_help(void)
 {
 	printf("libdanganwad wad_tool\n");
@@ -18,6 +16,8 @@ int print_help(void)
 	printf("\n\t --- File/Directory extraction\n\n");
 	printf("\te - Extract all files and directories from a wad file [in: wadfile]\n");
 	printf("\tf - Extract a single file from a wad file [in: wadfile filename]\n");
+	printf("\n\t --- WAD file repacking\n\n");
+	printf("\tr - Repack a directory to a wad file [in: directory]\n");
 	printf("\n\t --- File/Directory listing\n\n");
 	printf("\tla - Lists all files and directories in a wad file [in: wadfile]\n");
 	printf("\tld - Lists all directories in a wad file [in: wadfile]\n");
@@ -182,6 +182,28 @@ file_exit:
 	return ret;
 }
 
+int repack_wad(char* fName, char* outName)
+{
+	FILE* wad_ptr;
+	int ret = 0;
+
+	wad_ptr = fopen(outName, "wb");
+	if (!wad_ptr)
+	{
+		printf("Invalid output filename\n");
+		return -2;
+	}
+
+	// To avoid conflicts between the wad header and the file contents,
+	// the entire repacking process is handled by libdanganwad.
+	ret = wad_pack_from_dir(fName, wad_ptr);
+	if (ret)
+		printf("Repacking WAD failed!\n");
+
+	fclose(wad_ptr);
+	return ret;
+}
+
 int wad_list(char* fName, char op)
 {
 	FILE *wad_ptr;
@@ -302,15 +324,23 @@ int main(int argc, char** argv)
 	if (argc < 2)
 		return print_help();
 
+	// Extract all
 	if (argv[1][0] == 'e' && argc == 4)
 		return extract_wad(argv[2], argv[3]);
 
-	if (argv[1][0] == 'f' && argc == 4)
+	// Extract file
+	if (argv[1][0] == 'f' && argc == 5)
 		return extract_wad_file(argv[2], argv[3], argv[4]);
 
+	// Repack all
+	if (argv[1][0] == 'r' && argc == 4)
+		return repack_wad(argv[2], argv[3]);
+
+	// List contents
 	if (argv[1][0] == 'l' && argc == 3)
 		return wad_list(argv[2], argv[1][1]);
 
+	// Object info
 	if (argv[1][0] == 'i' && argc == 4)
 		return wad_info(argv[2], argv[3], argv[1][1]);
 

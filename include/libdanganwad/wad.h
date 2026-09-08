@@ -1,9 +1,14 @@
 #ifndef LIBDANGANWAD_WAD_H
 #define LIBDANGANWAD_WAD_H
 
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
+
+// Macro definitions
+#define MAX_PATHS 1000
+#define MAX_PATH_LEN 512
 
 // Structure definitions
 typedef struct {
@@ -110,6 +115,16 @@ long wad_get_file_offset(wad_data* wad_dta, wad_file* wad_fle);
  * @return the wad_dir structure on success or null on failure
  */
 wad_dir* wad_get_dir(wad_data* wad_dta, const char* name);
+
+/**
+ * int wad_pack_from_dir(const char*, const char*) - repack a wad file based on
+ * in_dir contents.
+ *
+ * @param in_dir - the directory structure handle
+ * @param out_file - the output file handle
+ * @return number of files written on success, < 0 on failure
+ */
+int wad_pack_from_dir(const char* in_dir, FILE* out_file);
 
 /**
  * void wad_close(wad_data*) - closes a wad file.
