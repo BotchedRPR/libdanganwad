@@ -26,6 +26,21 @@ enable_testing()
 
 # define tests
 add_test(
-  NAME wad_test_extract
-  COMMAND $<TARGET_FILE:wad_test_extract>
+  NAME extract_single_file
+  COMMAND $<TARGET_FILE:wad_test_extract> 0
+  )
+
+add_test(
+  NAME extract_single_file_from_dir
+  COMMAND $<TARGET_FILE:wad_test_extract> 1
+  )
+
+add_test(
+  NAME extract_multi_files
+  COMMAND $<TARGET_FILE:wad_test_extract> 2
+  )
+
+add_test(
+  NAME extract_multi_files_from_dir
+  COMMAND $<TARGET_FILE:wad_test_extract> 2
   )
