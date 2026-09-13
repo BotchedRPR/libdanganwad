@@ -10,6 +10,20 @@
 
 #include <libdanganwad/wad.h>
 
+// Filenames
+#if !defined(SRCDIR)
+#warning "Please define SRCDIR!"
+#define SRCDIR "./"
+#endif
+
+#define TEST0_FILENAME	SRCDIR "tests/data/test_data_00_single_file.wad"
+#define TEST1_FILENAME	SRCDIR "tests/data/test_data_01_single_file_in_folder.wad"
+#define TEST2_FILENAME	SRCDIR "tests/data/test_data_02_multiple_files_in_root.wad"
+#define TEST3_FILENAME	SRCDIR "tests/data/test_data_03_files_in_multiple_directories.wad"
+#define TEST4_FILENAME	SRCDIR "tests/data/repack_test_data_00/"
+#define TEST5_FILENAME	SRCDIR "tests/data/repack_test_data_01/"
+#define TEST6_FILENAME	SRCDIR "tests/data/repack_test_data_02/"
+
 // Unpack test data
 #define WORKS_STRING "It works!"
 #define WORKS_STRING_LEN 10
@@ -296,7 +310,7 @@ int run_test_00(void)
 {
 	int ret = 0;
 
-	ret = extract_wad_file("tests/data/test_data_00_single_file.wad", "data.dat", "tmp.dat");
+	ret = extract_wad_file(TEST0_FILENAME, "data.dat", "tmp.dat");
 	if (!ret)
 		return ret;
 
@@ -309,7 +323,7 @@ int run_test_01(void)
 {
 	int ret = 0;
 
-	ret = extract_wad_file("tests/data/test_data_01_single_file_in_folder.wad", "dataDir/data.dat", "tmp.dat");
+	ret = extract_wad_file(TEST1_FILENAME, "dataDir/data.dat", "tmp.dat");
 	if (!ret)
 		return ret;
 
@@ -322,7 +336,7 @@ int run_test_02(void)
 {
 	int ret = 0;
 
-	ret = extract_wad("tests/data/test_data_02_multiple_files_in_root.wad", "out");
+	ret = extract_wad(TEST2_FILENAME, "out");
 	if (ret != 0)
 		goto clean;
 
@@ -338,7 +352,7 @@ int run_test_03(void)
 {
 	int ret = 0;
 
-	ret = extract_wad("tests/data/test_data_03_files_in_multiple_directories.wad", "out");
+	ret = extract_wad(TEST3_FILENAME, "out");
 	if (ret != 0)
 		goto clean;
 
@@ -356,7 +370,7 @@ int run_test_04(void)
 {
 	int ret = 0;
 
-	ret = pack_wad_tmp("tests/data/repack_test_data_00");
+	ret = pack_wad_tmp(TEST4_FILENAME);
 	if (ret != 0)
 		goto clean;
 
@@ -372,7 +386,7 @@ int run_test_05(void)
 {
 	int ret = 0;
 
-	ret = pack_wad_tmp("tests/data/repack_test_data_01");
+	ret = pack_wad_tmp(TEST5_FILENAME);
 	if (ret != 0)
 		goto clean;
 
@@ -388,7 +402,7 @@ int run_test_06(void)
 {
 	int ret = 0;
 
-	ret = pack_wad_tmp("tests/data/repack_test_data_02");
+	ret = pack_wad_tmp(TEST6_FILENAME);
 	if (ret != 0)
 		goto clean;
 

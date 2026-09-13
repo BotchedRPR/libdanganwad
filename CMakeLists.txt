@@ -5,7 +5,13 @@ cmake_minimum_required(VERSION 3.14)
 project(wadproject LANGUAGES C)
 
 # compiler flags
-add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+add_compile_options(
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
+    -DSRCDIR="${CMAKE_SOURCE_DIR}/"
+)
 
 # danganwad library
 add_library(danganwad src/libdanganwad/wad.c)
