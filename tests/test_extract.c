@@ -300,6 +300,8 @@ int run_test_00(void)
 	if (!ret)
 		return ret;
 
+	remove("tmp.dat");
+
 	return verify_single_file("data.dat");
 }
 
@@ -310,6 +312,8 @@ int run_test_01(void)
 	ret = extract_wad_file("tests/data/test_data_01_single_file_in_folder.wad", "dataDir/data.dat", "tmp.dat");
 	if (!ret)
 		return ret;
+
+	remove("tmp.dat");
 
 	return verify_single_file("data.dat");
 }
@@ -325,6 +329,7 @@ int run_test_02(void)
 	ret = verify_multi_files("out/data00.dat", "out/data01.dat");
 
 clean:
+		remove("tmp.dat");
 		rmdir("out");
 		return ret;
 }
@@ -340,6 +345,7 @@ int run_test_03(void)
 	ret = verify_multi_files("out/data00/data.dat", "out/data01/data.dat");
 
 clean:
+	remove("tmp.dat");
 	rmdir("out/data00");
 	rmdir("out/data01");
 	rmdir("out");
