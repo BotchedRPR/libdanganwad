@@ -65,30 +65,6 @@ typedef struct {
 wad_data* wad_load(FILE* fptr);
 
 /**
- * void wad_list_files(wad_data* wad_dta) - lists files in a wad file to
- * stdout.
- *
- * @param wad_data - the wad data structure
- */
-void wad_list_files(wad_data* wad_dta);
-
-/**
- * void wad_list_dirs(wad_data* wad_dta) - lists directories in a wad file to
- * stdout.
- *
- * @param wad_data - the wad data structure
- */
-void wad_list_dirs(wad_data* wad_dta);
-
-/**
- * void wad_list_dirs(wad_data* wad_dta) - lists every object in a wad file to
- * stdout.
- *
- * @param wad_data - the wad data structure
- */
-void wad_list_all(wad_data* wad_dta);
-
-/**
  * wad_file* wad_get_file(wad_data*, const char*) - get a file by name.
  *
  * @param wad_data - the wad data structure

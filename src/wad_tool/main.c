@@ -28,6 +28,44 @@ int print_help(void)
 	return -1;
 }
 
+void wad_list_files(wad_data* wad_dta)
+{
+	printf("WAD contains %i files:\n\n", wad_dta->fileCount);
+
+	printf("\tName\tSize (bytes)\tOffset (bytes, relative to wad_data_sec_off)\n");
+	printf("------------------------------------------------------------------\n");
+
+	for (uint32_t i = 0; i < wad_dta->fileCount; i++)
+		printf("\t%s\t%lu\t0x%lx\n", wad_dta->files[i].obj.name, wad_dta->files[i].fileSize, wad_dta->files[i].fileOffset);
+}
+
+void wad_list_dirs(wad_data* wad_dta)
+{
+	printf("WAD contains %i directories:\n\n", wad_dta->dirCount);
+
+	printf("\tName\n");
+	printf("------------------------------------------------------------------\n");
+
+	for (uint32_t i = 0; i < wad_dta->dirCount; i++)
+	{
+		printf("\t |%s\n", wad_dta->dirs[i].obj.name);
+		if (wad_dta->dirs[i].fileCount != 0)
+		{
+			for (uint32_t s = 0; s < wad_dta->dirs[i].fileCount; s++)
+				if (wad_dta->dirs[i].subs[s].isDir)
+					printf("\t | - %s/\n", wad_dta->dirs[i].subs[s].obj.name);
+			else
+				printf("\t | - %s\n", wad_dta->dirs[i].subs[s].obj.name);
+		}
+	}
+}
+
+void wad_list_all(wad_data* wad_dta)
+{
+	wad_list_files(wad_dta);
+	wad_list_dirs(wad_dta);
+}
+
 int extract_wad(char* fName, char* outName)
 {
 	FILE *wad_ptr;

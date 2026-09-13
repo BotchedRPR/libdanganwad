@@ -4,12 +4,13 @@
 #define _FILE_OFFSET_BITS 64
 
 #include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <ftw.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <ftw.h>
 
 #include <libdanganwad/wad.h>
 
@@ -378,10 +379,7 @@ wad_data* wad_load(FILE* fptr)
 
 	wad_dta = (wad_data*)malloc(sizeof(wad_data));
 	if (!wad_dta)
-	{
-		printf("%s: Invalid malloc\n", __func__);
 		goto late_fail_exit;
-	}
 
 	wad_dta->wad_fptr = fptr;
 
@@ -399,46 +397,8 @@ wad_data* wad_load(FILE* fptr)
 	return wad_dta;
 
 late_fail_exit:
-	free(wad_dta);
+	wad_close(wad_dta);
 	return NULL;
-}
-
-void wad_list_files(wad_data* wad_dta)
-{
-	printf("WAD contains %i files:\n\n", wad_dta->fileCount);
-
-	printf("\tName\tSize (bytes)\tOffset (bytes, relative to wad_data_sec_off)\n");
-	printf("------------------------------------------------------------------\n");
-
-	for (uint32_t i = 0; i < wad_dta->fileCount; i++)
-		printf("\t%s\t%lu\t0x%lx\n", wad_dta->files[i].obj.name, wad_dta->files[i].fileSize, wad_dta->files[i].fileOffset);
-}
-
-void wad_list_dirs(wad_data* wad_dta)
-{
-	printf("WAD contains %i directories:\n\n", wad_dta->dirCount);
-
-	printf("\tName\n");
-	printf("------------------------------------------------------------------\n");
-
-	for (uint32_t i = 0; i < wad_dta->dirCount; i++)
-	{
-		printf("\t |%s\n", wad_dta->dirs[i].obj.name);
-		if (wad_dta->dirs[i].fileCount != 0)
-		{
-			for (uint32_t s = 0; s < wad_dta->dirs[i].fileCount; s++)
-				if (wad_dta->dirs[i].subs[s].isDir)
-					printf("\t | - %s/\n", wad_dta->dirs[i].subs[s].obj.name);
-				else
-					printf("\t | - %s\n", wad_dta->dirs[i].subs[s].obj.name);
-		}
-	}
-}
-
-void wad_list_all(wad_data* wad_dta)
-{
-	wad_list_files(wad_dta);
-	wad_list_dirs(wad_dta);
 }
 
 wad_file* wad_get_file(wad_data* wad_dta, const char* name)
@@ -471,21 +431,19 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 	char obj_real[MAX_PATH];
 	const char* fn_result;
 	int fileOffset = 0;
-	int dirOffset = 0;
-
-	(void)dirOffset;
+	int ret = 0;
 
 	if (!in_dir || !out_file)
-		return -1;
+		return -EINVAL;
 
 	if (populate_dirs(in_dir))
-		return -2;
+		return -EIO;
 
 	// Create a wad_data structure
 	wad_dta = (wad_data*)malloc(sizeof(wad_data));
 	if (!wad_dta)
 	{
-		printf("%s: Invalid malloc\n", __func__);
+		ret = -EIO;
 		goto late_fail_exit;
 	}
 
@@ -503,11 +461,17 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 
 	wad_dta->files = calloc(curr_file, sizeof(wad_file));
 	if (wad_dta->files == NULL)
-		return -3;
+	{
+		ret = -ENOMEM;
+		goto late_fail_exit;
+	}
 
 	wad_dta->dirs = calloc(curr_dir, sizeof(wad_dir));
 	if (wad_dta->dirs == NULL)
-		return -4;
+	{
+		ret = -ENOMEM;
+		goto late_fail_exit;
+	}
 
 	// Set up wad_file(s)
 	for (uint32_t i = 0; i < curr_file; i++)
@@ -516,7 +480,10 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 
 		// Object
 		if (realpath(fileNames[i], obj_real) == NULL)
-			return -5;
+		{
+			ret = -ENOENT;
+			goto late_fail_exit;
+		}
 
 		fn_result = get_wad_obj_filename(in_dir, obj_real);
 		wad_dta->files[i].obj.name = strdup(fn_result);
@@ -541,7 +508,10 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 			continue;
 
 		if (realpath(dirNames[i], obj_real) == NULL)
-			return -6;
+		{
+			ret = -ENOENT;
+			goto late_fail_exit;
+		}
 
 		fn_result = get_wad_obj_filename(in_dir, obj_real);
 		wad_dta->dirs[i].obj.name = strdup(fn_result);
@@ -551,7 +521,10 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 		DIR *dr = opendir(obj_real);
 
 		if (dr == NULL)
-			return -7;
+		{
+			ret = -ENOENT;
+			goto late_fail_exit;
+		}
 
 		while ((de = readdir(dr)) != NULL)
 		{
@@ -565,7 +538,8 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 				if (tmp == NULL)
 				{
 					closedir(dr);
-					return -8;
+					ret = -ENOMEM;
+					goto late_fail_exit;
 				}
 
 				wad_dta->dirs[i].subs = tmp;
@@ -575,7 +549,8 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 				if (wad_dta->dirs[i].subs[subCount].obj.name == NULL)
 				{
 					closedir(dr);
-					return -9;
+					ret = -EINVAL;
+					goto late_fail_exit;
 				}
 
 				wad_dta->dirs[i].subs[subCount].obj.nameSize = strlen(de->d_name);
@@ -587,14 +562,14 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 		closedir(dr);
 	}
 
-	if (!write_wad_header(wad_dta))
+	if (!write_wad_header(wad_dta) ||
+		!write_wad_files(wad_dta) ||
+		!write_wad_dirs(wad_dta))
+	{
+		ret = -EIO;
 		goto late_fail_exit;
+	}
 
-	if (!write_wad_files(wad_dta))
-		goto late_fail_exit;
-
-	if (!write_wad_dirs(wad_dta))
-		goto late_fail_exit;
 
 	for (uint32_t i = 0; i < curr_file; i++) {
 		FILE* in_f = fopen(fileNames[i], "rb");
@@ -625,7 +600,7 @@ late_fail_exit:
 	curr_file = 0;
 
 	if (wad_dta) wad_close(wad_dta);
-	return -1;
+	return ret;
 }
 
 void wad_close(wad_data* wad_dta)
