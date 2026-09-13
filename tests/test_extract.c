@@ -10,8 +10,51 @@
 
 #include <libdanganwad/wad.h>
 
+// Unpack test data
 #define WORKS_STRING "It works!"
 #define WORKS_STRING_LEN 10
+
+// Repack test data
+#define FILE0_HASH	0x3523102f
+#define FILE1_HASH	0x143225f2
+#define FILE2_HASH	0xff7e7290
+
+#define CRC32_POLY 0xEDB88320
+
+uint32_t crc32_file(const char *filename)
+{
+	static uint32_t table[256];
+	static int table_initialized = 0;
+	uint32_t crc = 0xFFFFFFFF;
+	int ch;
+
+	FILE *file = fopen(filename, "rb");
+	if (!file) return 0;
+
+	if (!table_initialized) {
+		for (uint32_t i = 0; i < 256; i++) {
+			uint32_t remainder = i;
+			for (int j = 0; j < 8; j++) {
+				if (remainder & 1) {
+					remainder = (remainder >> 1) ^ CRC32_POLY;
+				} else {
+					remainder >>= 1;
+				}
+			}
+			table[i] = remainder;
+		}
+		table_initialized = 1;
+	}
+
+	while ((ch = fgetc(file)) != EOF) {
+		uint8_t byte = (uint8_t)ch;
+		crc = (crc >> 8) ^ table[(crc & 0xFF) ^ byte];
+	}
+
+	fclose(file);
+	return ~crc; // Invert bits for the final result
+}
+
 
 int extract_wad(char* fName, char* outName)
 {
@@ -227,6 +270,28 @@ static int verify_multi_files(const char* fName1, const char* fName2)
 	return 0;
 }
 
+int pack_wad_tmp(char* fName)
+{
+	FILE* wad_ptr;
+	int ret = 0;
+
+	wad_ptr = fopen("tmp.wad", "wb");
+	if (!wad_ptr)
+	{
+		printf("Invalid output filename\n");
+		return -2;
+	}
+
+	// To avoid conflicts between the wad header and the file contents,
+	// the entire repacking process is handled by libdanganwad.
+	ret = wad_pack_from_dir(fName, wad_ptr);
+	if (ret)
+		printf("Repacking WAD failed!\n");
+
+	fclose(wad_ptr);
+	return ret;
+}
+
 int run_test_00(void)
 {
 	int ret = 0;
@@ -281,6 +346,54 @@ clean:
 	return ret;
 }
 
+int run_test_04(void)
+{
+	int ret = 0;
+
+	ret = pack_wad_tmp("tests/data/repack_test_data_00");
+	if (ret != 0)
+		goto clean;
+
+	if (crc32_file("tmp.wad") != FILE0_HASH)
+		ret = -1;
+
+clean:
+	remove("tmp.wad");
+	return ret;
+}
+
+int run_test_05(void)
+{
+	int ret = 0;
+
+	ret = pack_wad_tmp("tests/data/repack_test_data_01");
+	if (ret != 0)
+		goto clean;
+
+	if (crc32_file("tmp.wad") != FILE1_HASH)
+		ret = -1;
+
+clean:
+	remove("tmp.wad");
+	return ret;
+}
+
+int run_test_06(void)
+{
+	int ret = 0;
+
+	ret = pack_wad_tmp("tests/data/repack_test_data_02");
+	if (ret != 0)
+		goto clean;
+
+	if (crc32_file("tmp.wad") != FILE2_HASH)
+		ret = -1;
+
+clean:
+	remove("tmp.wad");
+	return ret;
+}
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -306,6 +419,18 @@ int main(int argc, char** argv)
 		// Extract multiple files from a child dir of wad
 		case '3':
 			return run_test_03();
+
+		// Pack a single file to a wad
+		case '4':
+			return run_test_04();
+
+		// Pack multiple files to a wad
+		case '5':
+			return run_test_05();
+
+		// Pack multiple files in multiple directories to a wad
+		case '6':
+			return run_test_06();
 	}
 
 	return -1;
