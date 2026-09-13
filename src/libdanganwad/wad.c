@@ -16,7 +16,7 @@
 
 #define MAX_DIRS	0xFFF
 #define MAX_FILES	0xFFFFF
-#define MAX_PATH 4096
+#define MAX_PATH	4096
 
 // TODO: Does HM2/DR2 need different minor/majors?
 #define WAD_MAJOR 0x1
@@ -432,18 +432,25 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 	const char* fn_result;
 	int fileOffset = 0;
 	int ret = 0;
+	DIR *dir;
 
 	if (!in_dir || !out_file)
-		return -EINVAL;
+		return EINVAL;
+
+	dir = opendir(in_dir);
+	if (dir)
+		closedir(dir);
+	else
+		return EIO;
 
 	if (populate_dirs(in_dir))
-		return -EIO;
+		return EIO;
 
 	// Create a wad_data structure
 	wad_dta = (wad_data*)malloc(sizeof(wad_data));
 	if (!wad_dta)
 	{
-		ret = -EIO;
+		ret = EIO;
 		goto late_fail_exit;
 	}
 
@@ -462,14 +469,14 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 	wad_dta->files = calloc(curr_file, sizeof(wad_file));
 	if (wad_dta->files == NULL)
 	{
-		ret = -ENOMEM;
+		ret = ENOMEM;
 		goto late_fail_exit;
 	}
 
 	wad_dta->dirs = calloc(curr_dir, sizeof(wad_dir));
 	if (wad_dta->dirs == NULL)
 	{
-		ret = -ENOMEM;
+		ret = ENOMEM;
 		goto late_fail_exit;
 	}
 
@@ -481,7 +488,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 		// Object
 		if (realpath(fileNames[i], obj_real) == NULL)
 		{
-			ret = -ENOENT;
+			ret = ENOENT;
 			goto late_fail_exit;
 		}
 
@@ -509,7 +516,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 
 		if (realpath(dirNames[i], obj_real) == NULL)
 		{
-			ret = -ENOENT;
+			ret = ENOENT;
 			goto late_fail_exit;
 		}
 
@@ -522,7 +529,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 
 		if (dr == NULL)
 		{
-			ret = -ENOENT;
+			ret = ENOENT;
 			goto late_fail_exit;
 		}
 
@@ -538,7 +545,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 				if (tmp == NULL)
 				{
 					closedir(dr);
-					ret = -ENOMEM;
+					ret = ENOMEM;
 					goto late_fail_exit;
 				}
 
@@ -549,7 +556,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 				if (wad_dta->dirs[i].subs[subCount].obj.name == NULL)
 				{
 					closedir(dr);
-					ret = -EINVAL;
+					ret = EINVAL;
 					goto late_fail_exit;
 				}
 
@@ -566,7 +573,7 @@ int wad_pack_from_dir(const char* in_dir, FILE* out_file)
 		!write_wad_files(wad_dta) ||
 		!write_wad_dirs(wad_dta))
 	{
-		ret = -EIO;
+		ret = EIO;
 		goto late_fail_exit;
 	}
 

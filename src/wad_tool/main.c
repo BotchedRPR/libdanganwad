@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -236,7 +237,10 @@ int repack_wad(char* fName, char* outName)
 	// the entire repacking process is handled by libdanganwad.
 	ret = wad_pack_from_dir(fName, wad_ptr);
 	if (ret)
-		printf("Repacking WAD failed!\n");
+	{
+		printf("Repacking WAD failed: %s\n", strerror(ret));
+		remove(outName);
+	}
 
 	fclose(wad_ptr);
 	return ret;
