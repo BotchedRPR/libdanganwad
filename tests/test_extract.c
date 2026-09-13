@@ -329,9 +329,9 @@ int run_test_02(void)
 	ret = verify_multi_files("out/data00.dat", "out/data01.dat");
 
 clean:
-		remove("tmp.dat");
-		rmdir("out");
-		return ret;
+	remove("tmp.dat");
+	rmdir("out");
+	return ret;
 }
 
 int run_test_03(void)
